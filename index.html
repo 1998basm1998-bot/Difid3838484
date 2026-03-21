@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة المواد والأقساط</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #1e40af;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--card-bg);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.05);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 15px;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            padding: 12px 15px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-align: right;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--bg);
+            color: var(--primary);
+        }
+
+        .nav-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .page-section {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h2 { font-size: 1.5rem; color: var(--text-main); }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: opacity 0.3s;
+            color: white;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background-color: var(--primary); }
+        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-warning { background-color: var(--warning); color: #fff; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--bg);
+        }
+
+        th {
+            background-color: var(--bg);
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        tr:hover { background-color: #f9fafb; }
+        .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .action-btns button { padding: 6px 12px; font-size: 0.85rem; }
+        .badge { background: var(--success); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; }
+        .badge.late { background: var(--danger); }
+
+        /* =========================================
+           نظام النوافذ المنبثقة ثلاثية الأبعاد 3D Modal
+           ========================================= */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* المربع الزجاجي ثلاثي الأبعاد */
+        .modal-box {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-top: 2px solid rgba(255, 255, 255, 1);
+            border-left: 2px solid rgba(255, 255, 255, 1);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.2),
+                inset 0 0 20px rgba(255,255,255,0.5),
+                0 0 30px rgba(236, 72, 153, 0.3), /* إضاءة وردية خفيفة */
+                0 0 30px rgba(59, 130, 246, 0.3); /* إضاءة زرقاء خفيفة */
+            transform: scale(0.6) translateY(50px);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); /* تأثير ارتداد (Bouncy) */
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+            white-space: pre-wrap;
+        }
+
+        /* حقل الإدخال في الرسالة */
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(255,255,255,0.7);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            outline: none;
+            transition: 0.3s;
+            color: #1f2937;
+            font-weight: 500;
+        }
+        .modal-input:focus {
+            border-color: #ec4899;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* الأزرار ثلاثية الأبعاد */
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn-modal {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .btn-modal-confirm {
+            background: linear-gradient(180deg, #f472b6, #db2777);
+            color: white;
+            box-shadow: 0 6px 0 #be185d, 0 10px 20px rgba(219, 39, 119, 0.4);
+        }
+
+        .btn-modal-confirm:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #be185d, 0 4px 10px rgba(219, 39, 119, 0.4);
+        }
+
+        .btn-modal-cancel {
+            background: linear-gradient(180deg, #9ca3af, #6b7280);
+            color: white;
+            box-shadow: 0 6px 0 #4b5563, 0 10px 20px rgba(107, 114, 128, 0.4);
+        }
+
+        .btn-modal-cancel:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #4b5563, 0 4px 10px rgba(107, 114, 128, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">نظام الإدارة</div>
+        <button class="nav-btn active" onclick="switchPage('materialsPage', this)">إدارة المواد</button>
+        <button class="nav-btn" onclick="switchPage('installmentsPage', this)">نظام الأقساط</button>
+    </div>
+
+    <div class="main-content">
+        <!-- واجهة 1: إدارة المواد -->
+        <div id="materialsPage" class="page-section active">
+            <div class="card">
+                <div class="card-header">
+                    <h2>قائمة المواد</h2>
+                    <button class="btn btn-primary" onclick="addMaterial()">+ إضافة مادة</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم المادة</th>
+                            <th>سعر الشراء</th>
+                            <th>البيع نقداً</th>
+                            <th>قسط (10 أشهر)</th>
+                            <th>قسط (12 شهر)</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="materialsTableBody">
+                        <!-- يتم حقن البيانات هنا بواسطة جافا سكربت -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- واجهة 2: نظام الأقساط -->
+        <div id="installmentsPage" class="page-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>إدارة الزبائن والأقساط</h2>
+                    <div>
+                        <button class="btn btn-danger" onclick="showLateCustomers()">المتأخرين ⚠️</button>
+                        <button class="btn btn-primary" onclick="addCustomer()">+ إضافة زبون</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم الزبون</th>
+                            <th>رقم الهاتف</th>
+                            <th>الأقساط المسددة</th>
+                            <th>العمليات السريعة</th>
+                            <th>خيارات الحساب</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customersTableBody">
+                        <!-- يتم حقن البيانات هنا بواسطة جافا سكربت -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الرسائل ثلاثية الأبعاد (Modal) -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-box">
+            <div id="modalText" class="modal-title"></div>
+            <input type="text" id="modalInput" class="modal-input" style="display: none;">
+            <div class="modal-buttons" id="modalButtons">
+                <!-- يتم إنشاء الأزرار هنا ديناميكياً -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- قاعدة البيانات الوهمية (مصفوفات) ---
+        let materials = [
+            { id: 1, name: "غسالة سامسونج", buy: 300, cash: 350, p10: 400, p12: 430 },
+            { id: 2, name: "ثلاجة إل جي", buy: 500, cash: 580, p10: 650, p12: 690 }
+        ];
+
+        let customers = [
+            { id: 1, name: "أحمد علي", phone: "07701234567", paidMonths: 2, isLate: false },
+            { id: 2, name: "مصطفى حسين", phone: "07809876543", paidMonths: 0, isLate: true }
+        ];
+
+        // --- نظام النوافذ المنبثقة المخصص (بديل alert, confirm, prompt) ---
+        function showModal({ type, message, defaultValue = '' }) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('customModal');
+                const modalText = document.getElementById('modalText');
+                const modalInput = document.getElementById('modalInput');
+                const modalButtons = document.getElementById('modalButtons');
+
+                modalText.innerText = message;
+                modalButtons.innerHTML = '';
+                modalInput.style.display = 'none';
+                modalInput.value = defaultValue;
+
+                const closeAction = (val) => {
+                    modal.classList.remove('active');
+                    setTimeout(() => { resolve(val); }, 300); // الانتظار حتى انتهاء الأنيميشن
+                };
+
+                if (type === 'alert') {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-modal btn-modal-confirm';
+                    btn.innerText = 'موافق';
+                    btn.onclick = () => closeAction(true);
+                    modalButtons.appendChild(btn);
+                } 
+                else if (type === 'confirm') {
+                    const btnYes = document.createElement('button');
+                    btnYes.className = 'btn-modal btn-modal-confirm';
+                    btnYes.innerText = 'موافق';
+                    btnYes.onclick = () => closeAction(true);
+
+                    const btnNo = document.createElement('button');
+                    btnNo.className = 'btn-modal btn-modal-cancel';
+                    btnNo.innerText = 'إلغاء';
+                    btnNo.onclick = () => closeAction(false);
+
+                    modalButtons.appendChild(btnYes);
+                    modalButtons.appendChild(btnNo);
+                } 
+                else if (type === 'prompt') {
+                    modalInput.style.display = 'block';
+                    
+                    const btnYes = document.createElement('button');
+                    btnYes.className = 'btn-modal btn-modal-confirm';
+                    btnYes.innerText = 'حفظ';
+                    btnYes.onclick = () => closeAction(modalInput.value);
+
+                    const btnNo = document.createElement('button');
+                    btnNo.className = 'btn-modal btn-modal-cancel';
+                    btnNo.innerText = 'إلغاء';
+                    btnNo.onclick = () => closeAction(null);
+
+                    modalButtons.appendChild(btnYes);
+                    modalButtons.appendChild(btnNo);
+
+                    // تركيز المؤشر داخل الحقل بعد ظهور النافذة
+                    setTimeout(() => modalInput.focus(), 300);
+                }
+
+                modal.classList.add('active');
+            });
+        }
+
+        // اختصارات سهلة الاستخدام للدوال
+        async function customAlert(msg) { return await showModal({ type: 'alert', message: msg }); }
+        async function customConfirm(msg) { return await showModal({ type: 'confirm', message: msg }); }
+        async function customPrompt(msg, def = '') { return await showModal({ type: 'prompt', message: msg, defaultValue: def }); }
+
+
+        // --- التبديل بين الواجهات ---
+        function switchPage(pageId, btnElement) {
+            document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            btnElement.classList.add('active');
+        }
+
+        // --- وظائف إدارة المواد ---
+        function renderMaterials() {
+            const tbody = document.getElementById('materialsTableBody');
+            tbody.innerHTML = '';
+            materials.forEach(m => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${m.name}</td>
+                        <td>${m.buy}$</td>
+                        <td>${m.cash}$</td>
+                        <td>${m.p10}$</td>
+                        <td>${m.p12}$</td>
+                        <td class="action-btns">
+                            <button class="btn btn-warning" onclick="editMaterial(${m.id})">تعديل</button>
+                            <button class="btn btn-danger" onclick="deleteMaterial(${m.id})">حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function addMaterial() {
+            let name = await customPrompt("أدخل اسم المادة الجديدة:");
+            if (!name) return;
+            let buy = await customPrompt("سعر الشراء ($):") || 0;
+            let cash = await customPrompt("سعر البيع نقداً ($):") || 0;
+            let p10 = await customPrompt("سعر القسط لـ 10 أشهر ($):") || 0;
+            let p12 = await customPrompt("سعر القسط لـ 12 شهر ($):") || 0;
+            
+            materials.push({ id: Date.now(), name, buy, cash, p10, p12 });
+            renderMaterials();
+            customAlert("تمت إضافة المادة بنجاح!");
+        }
+
+        async function editMaterial(id) {
+            let material = materials.find(m => m.id === id);
+            let newName = await customPrompt("تعديل اسم المادة:", material.name);
+            if (newName) {
+                material.name = newName;
+                renderMaterials();
+                customAlert("تم تعديل المادة بنجاح!");
+            }
+        }
+
+        async function deleteMaterial(id) {
+            if (await customConfirm("هل أنت متأكد من حذف هذه المادة؟")) {
+                materials = materials.filter(m => m.id !== id);
+                renderMaterials();
+                customAlert("تم الحذف بنجاح!");
+            }
+        }
+
+        // --- وظائف إدارة الزبائن والأقساط ---
+        function renderCustomers() {
+            const tbody = document.getElementById('customersTableBody');
+            tbody.innerHTML = '';
+            customers.forEach(c => {
+                let statusBadge = c.isLate ? '<span class="badge late">متأخر</span>' : '<span class="badge">منتظم</span>';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${c.name} ${statusBadge}</td>
+                        <td>${c.phone}</td>
+                        <td>${c.paidMonths} أشهر</td>
+                        <td class="action-btns">
+                            <button class="btn btn-success" onclick="payInstallment(${c.id})">تسديد قسط</button>
+                            <button class="btn btn-danger" onclick="cancelInstallment(${c.id})">إلغاء التسديد</button>
+                        </td>
+                        <td class="action-btns">
+                            <button class="btn btn-warning" onclick="editCustomer(${c.id})">تعديل</button>
+                            <button class="btn btn-primary" onclick="showStatement(${c.id})">كشف حساب</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function addCustomer() {
+            let name = await customPrompt("أدخل اسم الزبون الجديد:");
+            if (!name) return;
+            let phone = await customPrompt("أدخل رقم الهاتف:");
+            customers.push({ id: Date.now(), name, phone, paidMonths: 0, isLate: false });
+            renderCustomers();
+            customAlert("تمت إضافة الزبون بنجاح!");
+        }
+
+        async function editCustomer(id) {
+            let customer = customers.find(c => c.id === id);
+            let newName = await customPrompt("تعديل اسم الزبون:", customer.name);
+            if (newName) {
+                customer.name = newName;
+                renderCustomers();
+                customAlert("تم تعديل بيانات الزبون بنجاح!");
+            }
+        }
+
+        async function payInstallment(id) {
+            let customer = customers.find(c => c.id === id);
+            customer.paidMonths += 1;
+            customer.isLate = false; 
+            renderCustomers();
+            customAlert(`تم تسديد القسط للزبون ${customer.name} بنجاح!`);
+        }
+
+        async function cancelInstallment(id) {
+            let customer = customers.find(c => c.id === id);
+            if (customer.paidMonths > 0) {
+                if(await customConfirm(`هل أنت متأكد من إلغاء آخر تسديد للزبون ${customer.name}؟`)){
+                    customer.paidMonths -= 1;
+                    renderCustomers();
+                    customAlert("تم إلغاء التسديد بنجاح.");
+                }
+            } else {
+                customAlert("لا يوجد أقساط مسددة لإلغائها.");
+            }
+        }
+
+        async function showStatement(id) {
+            let customer = customers.find(c => c.id === id);
+            await customAlert(`كشف حساب الزبون:\n\nالاسم: ${customer.name}\nرقم الهاتف: ${customer.phone}\nعدد الأقساط المسددة: ${customer.paidMonths} أشهر\nحالة الدفع: ${customer.isLate ? 'متأخر ⚠️' : 'منتظم ✅'}`);
+        }
+
+        async function showLateCustomers() {
+            let lateList = customers.filter(c => c.isLate).map(c => c.name).join("\n- ");
+            if (lateList) {
+                await customAlert("قائمة الزبائن المتأخرين:\n\n- " + lateList);
+            } else {
+                await customAlert("لا يوجد زبائن متأخرين حالياً. الجميع مسدد!");
+            }
+        }
+
+        // تشغيل دوال العرض عند تحميل الصفحة أول مرة
+        window.onload = function() {
+            renderMaterials();
+            renderCustomers();
+        };
+    </script>
+</body>
+</html>
