@@ -53,7 +53,7 @@ function showModal({ type, message, defaultValue = '' }) {
             
             const btnYes = document.createElement('button');
             btnYes.className = 'btn-modal btn-modal-confirm';
-            btnYes.innerText = 'حفظ';
+            btnYes.innerText = 'حفظ (Enter)';
             btnYes.onclick = () => closeAction(modalInput.value);
 
             const btnNo = document.createElement('button');
@@ -63,6 +63,12 @@ function showModal({ type, message, defaultValue = '' }) {
 
             modalButtons.appendChild(btnYes);
             modalButtons.appendChild(btnNo);
+
+            modalInput.onkeydown = function(e) {
+                if (e.key === 'Enter') {
+                    btnYes.click();
+                }
+            };
 
             // تركيز المؤشر داخل الحقل بعد ظهور النافذة
             setTimeout(() => modalInput.focus(), 300);
@@ -94,10 +100,10 @@ function renderMaterials() {
         tbody.innerHTML += `
             <tr>
                 <td>${m.name}</td>
-                <td>${m.buy}$</td>
-                <td>${m.cash}$</td>
-                <td>${m.p10}$</td>
-                <td>${m.p12}$</td>
+                <td>${Number(m.buy).toLocaleString()} دينار</td>
+                <td>${Number(m.cash).toLocaleString()} دينار</td>
+                <td>${Number(m.p10).toLocaleString()} دينار</td>
+                <td>${Number(m.p12).toLocaleString()} دينار</td>
                 <td class="action-btns">
                     <button class="btn btn-warning" onclick="editMaterial(${m.id})">تعديل</button>
                     <button class="btn btn-danger" onclick="deleteMaterial(${m.id})">حذف</button>
@@ -110,10 +116,10 @@ function renderMaterials() {
 async function addMaterial() {
     let name = await customPrompt("أدخل اسم المادة الجديدة:");
     if (!name) return;
-    let buy = await customPrompt("سعر الشراء ($):") || 0;
-    let cash = await customPrompt("سعر البيع نقداً ($):") || 0;
-    let p10 = await customPrompt("سعر القسط لـ 10 أشهر ($):") || 0;
-    let p12 = await customPrompt("سعر القسط لـ 12 شهر ($):") || 0;
+    let buy = await customPrompt("سعر الشراء (دينار):") || 0;
+    let cash = await customPrompt("سعر البيع نقداً (دينار):") || 0;
+    let p10 = await customPrompt("سعر القسط لـ 10 أشهر (دينار):") || 0;
+    let p12 = await customPrompt("سعر القسط لـ 12 شهر (دينار):") || 0;
     
     materials.push({ id: Date.now(), name, buy, cash, p10, p12 });
     renderMaterials();
@@ -126,16 +132,16 @@ async function editMaterial(id) {
     let newName = await customPrompt("تعديل اسم المادة:", material.name);
     if (newName === null) return;
     
-    let newBuy = await customPrompt("تعديل سعر الشراء:", material.buy);
+    let newBuy = await customPrompt("تعديل سعر الشراء (دينار):", material.buy);
     if (newBuy === null) return;
     
-    let newCash = await customPrompt("تعديل البيع نقداً:", material.cash);
+    let newCash = await customPrompt("تعديل البيع نقداً (دينار):", material.cash);
     if (newCash === null) return;
     
-    let newP10 = await customPrompt("تعديل قسط (10 أشهر):", material.p10);
+    let newP10 = await customPrompt("تعديل قسط (10 أشهر) (دينار):", material.p10);
     if (newP10 === null) return;
     
-    let newP12 = await customPrompt("تعديل قسط (12 شهر):", material.p12);
+    let newP12 = await customPrompt("تعديل قسط (12 شهر) (دينار):", material.p12);
     if (newP12 === null) return;
 
     material.name = newName;
