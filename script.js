@@ -93,12 +93,22 @@ function showModal({ type, message, defaultValue = '' }) {
             formContainer.id = 'modalForm';
             
             message.fields.forEach(f => {
-                formContainer.innerHTML += `
-                    <div class="modal-form-group">
-                        <label>${f.label}</label>
-                        <input type="${f.type || 'text'}" id="${f.id}" ${f.readonly ? 'readonly' : ''} value="${f.value || ''}">
-                    </div>
-                `;
+                if (f.type === 'select') {
+                    let optionsHtml = f.options.map(o => `<option value="${o.value}">${o.text}</option>`).join('');
+                    formContainer.innerHTML += `
+                        <div class="modal-form-group">
+                            <label>${f.label}</label>
+                            <select id="${f.id}">${optionsHtml}</select>
+                        </div>
+                    `;
+                } else {
+                    formContainer.innerHTML += `
+                        <div class="modal-form-group">
+                            <label>${f.label}</label>
+                            <input type="${f.type || 'text'}" id="${f.id}" ${f.readonly ? 'readonly' : ''} value="${f.value || ''}">
+                        </div>
+                    `;
+                }
             });
 
             modalText.innerText = message.title;
@@ -230,8 +240,10 @@ function renderCustomers() {
                 <td class="action-btns">
                     <button class="btn btn-success" onclick="payInstallment(${c.id})">تسديد</button>
                     <button class="btn btn-danger" onclick="addNewDebt(${c.id})">دين جديد</button>
+                    <button class="btn btn-warning" onclick="cancelInstallment(${c.id})">إلغاء التسديد</button>
                 </td>
                 <td class="action-btns">
+                    <button class="btn btn-primary" onclick="showDetails(${c.id})">تفاصيل</button>
                     <button class="btn btn-warning" onclick="editCustomer(${c.id})">تعديل</button>
                     <button class="btn btn-primary" onclick="showStatement(${c.id})">كشف حساب</button>
                 </td>
@@ -330,6 +342,53 @@ async function addNewDebt(id) {
     
     renderCustomers();
     customAlert(`تمت إضافة دين بقيمة ${debtAmount.toLocaleString()} دينار للزبون ${customer.name} بنجاح!`);
+}
+
+async function showDetails(id) {
+    let customer = customers.find(c => c.id === id);
+    let detailsText = customer.transactions.map(t => `📅 التاريخ: ${t.date}\nالنوع: ${t.type}\nالمبلغ: ${Number(t.amount).toLocaleString()} دينار\nالتفاصيل: ${t.notes}`).join('\n-----------------\n');
+    let msg = `تفاصيل الزبون: ${customer.name}\n\nفهرس وتفاصيل الحركات:\n\n${detailsText || 'لا توجد تفاصيل حالياً'}`;
+    await customAlert(msg);
+}
+
+async function cancelInstallment(id) {
+    let customer = customers.find(c => c.id === id);
+    let payments = customer.transactions.filter(t => t.type === 'تسديد');
+    
+    if (payments.length === 0) {
+        await customAlert("لا يوجد تسديدات سابقة لإلغائها.");
+        return;
+    }
+
+    let res = await showModal({
+        type: 'form',
+        message: {
+            title: 'إلغاء التسديد',
+            fields: [
+                {
+                    id: 'paymentToCancel', 
+                    label: 'الأشهر المسددة (اختر للإلغاء)', 
+                    type: 'select', 
+                    options: payments.map((p, index) => ({value: index, text: `تاريخ: ${p.date} - مبلغ: ${Number(p.amount).toLocaleString()} دينار`}))
+                }
+            ]
+        }
+    });
+    
+    if (res && res.paymentToCancel !== null && res.paymentToCancel !== "") {
+        let pIndex = Number(res.paymentToCancel);
+        let payment = payments[pIndex];
+        
+        customer.totalDebt += payment.amount;
+        
+        let exactIndex = customer.transactions.indexOf(payment);
+        if(exactIndex > -1) {
+            customer.transactions.splice(exactIndex, 1);
+        }
+        
+        renderCustomers();
+        customAlert("تم إلغاء التسديد وإرجاع المبلغ للرصيد بنجاح!");
+    }
 }
 
 async function showStatement(id) {
