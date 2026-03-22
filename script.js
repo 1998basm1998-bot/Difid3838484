@@ -1,15 +1,15 @@
 // --- قاعدة البيانات الوهمية (مصفوفات) ---
 let materials = [
-    { id: 1, name: "غسالة سامسونج", buy: 300, cash: 350, p10: 400, p12: 430 },
-    { id: 2, name: "ثلاجة إل جي", buy: 500, cash: 580, p10: 650, p12: 690 }
+    { id: 1, name: "غسالة سامسونج", buy: 300000, cash: 350000, p10: 400000, p12: 430000 },
+    { id: 2, name: "ثلاجة إل جي", buy: 500000, cash: 580000, p10: 650000, p12: 690000 }
 ];
 
 let customers = [
-    { id: 1, name: "أحمد علي", phone: "07701234567", paidMonths: 2, isLate: false },
-    { id: 2, name: "مصطفى حسين", phone: "07809876543", paidMonths: 0, isLate: true }
+    { id: 1, name: "أحمد علي", phone: "07701234567", notes: "زبون قديم", date: "2023-01-10", totalDebt: 400000, isLate: false, transactions: [] },
+    { id: 2, name: "مصطفى حسين", phone: "07809876543", notes: "موظف", date: "2023-05-20", totalDebt: 650000, isLate: true, transactions: [] }
 ];
 
-// --- نظام النوافذ المنبثقة المخصص (بديل alert, confirm, prompt) ---
+// --- نظام النوافذ المنبثقة المخصص ---
 function showModal({ type, message, defaultValue = '' }) {
     return new Promise((resolve) => {
         const modal = document.getElementById('customModal');
@@ -17,27 +17,38 @@ function showModal({ type, message, defaultValue = '' }) {
         const modalInput = document.getElementById('modalInput');
         const modalButtons = document.getElementById('modalButtons');
 
-        modalText.innerText = message;
+        modalText.innerText = typeof message === 'string' ? message : '';
         modalButtons.innerHTML = '';
         modalInput.style.display = 'none';
         modalInput.value = defaultValue;
 
         const closeAction = (val) => {
             modal.classList.remove('active');
-            setTimeout(() => { resolve(val); }, 300); // الانتظار حتى انتهاء الأنيميشن
+            setTimeout(() => { 
+                const existingForm = document.getElementById('modalForm');
+                if(existingForm) existingForm.remove();
+                resolve(val); 
+            }, 300);
         };
 
         if (type === 'alert') {
             const btn = document.createElement('button');
             btn.className = 'btn-modal btn-modal-confirm';
-            btn.innerText = 'موافق';
+            btn.innerText = 'موافق (Enter)';
             btn.onclick = () => closeAction(true);
             modalButtons.appendChild(btn);
+
+            window.addEventListener('keydown', function onKey(e) {
+                if (e.key === 'Enter' && modal.classList.contains('active')) {
+                    window.removeEventListener('keydown', onKey);
+                    btn.click();
+                }
+            });
         } 
         else if (type === 'confirm') {
             const btnYes = document.createElement('button');
             btnYes.className = 'btn-modal btn-modal-confirm';
-            btnYes.innerText = 'موافق';
+            btnYes.innerText = 'موافق (Enter)';
             btnYes.onclick = () => closeAction(true);
 
             const btnNo = document.createElement('button');
@@ -47,6 +58,13 @@ function showModal({ type, message, defaultValue = '' }) {
 
             modalButtons.appendChild(btnYes);
             modalButtons.appendChild(btnNo);
+
+            window.addEventListener('keydown', function onKey(e) {
+                if (e.key === 'Enter' && modal.classList.contains('active')) {
+                    window.removeEventListener('keydown', onKey);
+                    btnYes.click();
+                }
+            });
         } 
         else if (type === 'prompt') {
             modalInput.style.display = 'block';
@@ -65,26 +83,62 @@ function showModal({ type, message, defaultValue = '' }) {
             modalButtons.appendChild(btnNo);
 
             modalInput.onkeydown = function(e) {
-                if (e.key === 'Enter') {
-                    btnYes.click();
-                }
+                if (e.key === 'Enter') btnYes.click();
             };
 
-            // تركيز المؤشر داخل الحقل بعد ظهور النافذة
             setTimeout(() => modalInput.focus(), 300);
+        }
+        else if (type === 'form') {
+            const formContainer = document.createElement('div');
+            formContainer.id = 'modalForm';
+            
+            message.fields.forEach(f => {
+                formContainer.innerHTML += `
+                    <div class="modal-form-group">
+                        <label>${f.label}</label>
+                        <input type="${f.type || 'text'}" id="${f.id}" ${f.readonly ? 'readonly' : ''} value="${f.value || ''}">
+                    </div>
+                `;
+            });
+
+            modalText.innerText = message.title;
+            modalText.after(formContainer);
+
+            const btnYes = document.createElement('button');
+            btnYes.className = 'btn-modal btn-modal-confirm';
+            btnYes.innerText = 'حفظ (Enter)';
+            btnYes.onclick = () => {
+                let results = {};
+                message.fields.forEach(f => { results[f.id] = document.getElementById(f.id).value; });
+                closeAction(results);
+            };
+
+            const btnNo = document.createElement('button');
+            btnNo.className = 'btn-modal btn-modal-cancel';
+            btnNo.innerText = 'إلغاء';
+            btnNo.onclick = () => closeAction(null);
+
+            modalButtons.appendChild(btnYes);
+            modalButtons.appendChild(btnNo);
+
+            formContainer.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') btnYes.click();
+            });
+
+            setTimeout(() => {
+                let firstInput = document.getElementById(message.fields[0].id);
+                if(firstInput && !firstInput.readOnly) firstInput.focus();
+            }, 300);
         }
 
         modal.classList.add('active');
     });
 }
 
-// اختصارات سهلة الاستخدام للدوال
 async function customAlert(msg) { return await showModal({ type: 'alert', message: msg }); }
 async function customConfirm(msg) { return await showModal({ type: 'confirm', message: msg }); }
 async function customPrompt(msg, def = '') { return await showModal({ type: 'prompt', message: msg, defaultValue: def }); }
 
-
-// --- التبديل بين الواجهات ---
 function switchPage(pageId, btnElement) {
     document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -172,10 +226,10 @@ function renderCustomers() {
             <tr>
                 <td>${c.name} ${statusBadge}</td>
                 <td>${c.phone}</td>
-                <td>${c.paidMonths} أشهر</td>
+                <td>${Number(c.totalDebt).toLocaleString()} دينار</td>
                 <td class="action-btns">
-                    <button class="btn btn-success" onclick="payInstallment(${c.id})">تسديد قسط</button>
-                    <button class="btn btn-danger" onclick="cancelInstallment(${c.id})">إلغاء التسديد</button>
+                    <button class="btn btn-success" onclick="payInstallment(${c.id})">تسديد</button>
+                    <button class="btn btn-danger" onclick="addNewDebt(${c.id})">دين جديد</button>
                 </td>
                 <td class="action-btns">
                     <button class="btn btn-warning" onclick="editCustomer(${c.id})">تعديل</button>
@@ -187,10 +241,31 @@ function renderCustomers() {
 }
 
 async function addCustomer() {
-    let name = await customPrompt("أدخل اسم الزبون الجديد:");
-    if (!name) return;
-    let phone = await customPrompt("أدخل رقم الهاتف:");
-    customers.push({ id: Date.now(), name, phone, paidMonths: 0, isLate: false });
+    let res = await showModal({
+        type: 'form',
+        message: {
+            title: 'إضافة زبون جديد',
+            fields: [
+                {id: 'name', label: 'اسم الزبون'},
+                {id: 'notes', label: 'تفاصيل / ملاحظات'},
+                {id: 'date', type: 'date', label: 'التاريخ', value: new Date().toISOString().split('T')[0]}
+            ]
+        }
+    });
+    
+    if (!res || !res.name) return;
+    
+    customers.push({ 
+        id: Date.now(), 
+        name: res.name, 
+        phone: "-", 
+        notes: res.notes, 
+        date: res.date, 
+        totalDebt: 0, 
+        isLate: false, 
+        transactions: [] 
+    });
+    
     renderCustomers();
     customAlert("تمت إضافة الزبون بنجاح!");
 }
@@ -207,28 +282,61 @@ async function editCustomer(id) {
 
 async function payInstallment(id) {
     let customer = customers.find(c => c.id === id);
-    customer.paidMonths += 1;
-    customer.isLate = false; 
+    
+    let res = await showModal({
+        type: 'form',
+        message: {
+            title: 'تسديد دفعة',
+            fields: [
+                {id: 'total', label: 'المبلغ الكلي', value: customer.totalDebt, readonly: true},
+                {id: 'amount', label: 'مبلغ التسديد', type: 'number'},
+                {id: 'date', label: 'التاريخ', type: 'date', value: new Date().toISOString().split('T')[0]},
+                {id: 'notes', label: 'ملاحظات'}
+            ]
+        }
+    });
+    
+    if (!res || !res.amount) return;
+
+    let payAmount = Number(res.amount);
+    customer.totalDebt -= payAmount;
+    customer.transactions.push({ type: 'تسديد', amount: payAmount, date: res.date, notes: res.notes });
+    customer.isLate = false;
+    
     renderCustomers();
-    customAlert(`تم تسديد القسط للزبون ${customer.name} بنجاح!`);
+    customAlert(`تم تسديد مبلغ ${payAmount.toLocaleString()} دينار للزبون ${customer.name} بنجاح!`);
 }
 
-async function cancelInstallment(id) {
+async function addNewDebt(id) {
     let customer = customers.find(c => c.id === id);
-    if (customer.paidMonths > 0) {
-        if(await customConfirm(`هل أنت متأكد من إلغاء آخر تسديد للزبون ${customer.name}؟`)){
-            customer.paidMonths -= 1;
-            renderCustomers();
-            customAlert("تم إلغاء التسديد بنجاح.");
+    
+    let res = await showModal({
+        type: 'form',
+        message: {
+            title: 'إضافة دين جديد',
+            fields: [
+                {id: 'amount', label: 'المبلغ', type: 'number'},
+                {id: 'details', label: 'التفاصيل / ملاحظات'}
+            ]
         }
-    } else {
-        customAlert("لا يوجد أقساط مسددة لإلغائها.");
-    }
+    });
+    
+    if (!res || !res.amount) return;
+
+    let debtAmount = Number(res.amount);
+    customer.totalDebt += debtAmount;
+    let today = new Date().toISOString().split('T')[0];
+    customer.transactions.push({ type: 'دين جديد', amount: debtAmount, date: today, notes: res.details });
+    
+    renderCustomers();
+    customAlert(`تمت إضافة دين بقيمة ${debtAmount.toLocaleString()} دينار للزبون ${customer.name} بنجاح!`);
 }
 
 async function showStatement(id) {
     let customer = customers.find(c => c.id === id);
-    await customAlert(`كشف حساب الزبون:\n\nالاسم: ${customer.name}\nرقم الهاتف: ${customer.phone}\nعدد الأقساط المسددة: ${customer.paidMonths} أشهر\nحالة الدفع: ${customer.isLate ? 'متأخر ⚠️' : 'منتظم ✅'}`);
+    let transText = customer.transactions.map(t => `📅 ${t.date} | ${t.type}: ${Number(t.amount).toLocaleString()} | ملاحظات: ${t.notes}`).join('\n');
+    let msg = `كشف حساب الزبون:\n\nالاسم: ${customer.name}\nالرصيد الكلي المتبقي: ${Number(customer.totalDebt).toLocaleString()} دينار\n\nسجل العمليات:\n${transText || 'لا توجد عمليات مسجلة'}`;
+    await customAlert(msg);
 }
 
 async function showLateCustomers() {
@@ -236,11 +344,10 @@ async function showLateCustomers() {
     if (lateList) {
         await customAlert("قائمة الزبائن المتأخرين:\n\n- " + lateList);
     } else {
-        await customAlert("لا يوجد زبائن متأخرين حالياً. الجميع مسدد!");
+        await customAlert("لا يوجد زبائن متأخرين حالياً.");
     }
 }
 
-// تشغيل دوال العرض عند تحميل الصفحة أول مرة
 window.onload = function() {
     renderMaterials();
     renderCustomers();
