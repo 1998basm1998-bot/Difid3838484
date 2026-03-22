@@ -165,7 +165,6 @@ tr:hover { background-color: #f9fafb; }
     visibility: visible;
 }
 
-/* المربع الزجاجي ثلاثي الأبعاد */
 .modal-box {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
     backdrop-filter: blur(20px);
@@ -176,15 +175,15 @@ tr:hover { background-color: #f9fafb; }
     padding: 30px;
     text-align: center;
     width: 90%;
-    max-width: 380px;
+    max-width: 420px;
     box-shadow: 
         0 20px 40px rgba(0,0,0,0.2),
         inset 0 0 20px rgba(255,255,255,0.5),
-        0 0 30px rgba(236, 72, 153, 0.3), /* إضاءة وردية خفيفة */
-        0 0 30px rgba(59, 130, 246, 0.3); /* إضاءة زرقاء خفيفة */
+        0 0 30px rgba(236, 72, 153, 0.3),
+        0 0 30px rgba(59, 130, 246, 0.3);
     transform: scale(0.6) translateY(50px);
     opacity: 0;
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); /* تأثير ارتداد (Bouncy) */
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .modal-overlay.active .modal-box {
@@ -202,7 +201,6 @@ tr:hover { background-color: #f9fafb; }
     white-space: pre-wrap;
 }
 
-/* حقل الإدخال في الرسالة */
 .modal-input {
     width: 100%;
     padding: 12px;
@@ -224,7 +222,6 @@ tr:hover { background-color: #f9fafb; }
     background: rgba(255, 255, 255, 0.95);
 }
 
-/* الأزرار ثلاثية الأبعاد */
 .modal-buttons {
     display: flex;
     justify-content: center;
@@ -263,4 +260,34 @@ tr:hover { background-color: #f9fafb; }
 .btn-modal-cancel:active {
     transform: translateY(6px);
     box-shadow: 0 0 0 #4b5563, 0 4px 10px rgba(107, 114, 128, 0.4);
+}
+
+.modal-form-group {
+    text-align: right;
+    margin-bottom: 15px;
+}
+.modal-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #1f2937;
+}
+.modal-form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid rgba(255,255,255,0.7);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+    outline: none;
+    color: #1f2937;
+}
+.modal-form-group input:focus {
+    border-color: #ec4899;
+    background: rgba(255, 255, 255, 0.95);
+}
+.modal-form-group input[readonly] {
+    background: rgba(200, 200, 200, 0.3);
+    cursor: not-allowed;
 }
