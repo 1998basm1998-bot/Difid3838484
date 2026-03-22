@@ -272,7 +272,7 @@ tr:hover { background-color: #f9fafb; }
     font-weight: bold;
     color: #1f2937;
 }
-.modal-form-group input {
+.modal-form-group input, .modal-form-group select {
     width: 100%;
     padding: 10px;
     border: 2px solid rgba(255,255,255,0.7);
@@ -283,7 +283,7 @@ tr:hover { background-color: #f9fafb; }
     outline: none;
     color: #1f2937;
 }
-.modal-form-group input:focus {
+.modal-form-group input:focus, .modal-form-group select:focus {
     border-color: #ec4899;
     background: rgba(255, 255, 255, 0.95);
 }
