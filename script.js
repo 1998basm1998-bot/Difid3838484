@@ -393,8 +393,8 @@ async function cancelInstallment(id) {
 
 async function showStatement(id) {
     let customer = customers.find(c => c.id === id);
-    let transText = customer.transactions.map(t => `📅 ${t.date} | ${t.type}: ${Number(t.amount).toLocaleString()} | ملاحظات: ${t.notes}`).join('\n');
-    let msg = `كشف حساب الزبون:\n\nالاسم: ${customer.name}\nالرصيد الكلي المتبقي: ${Number(customer.totalDebt).toLocaleString()} دينار\n\nسجل العمليات:\n${transText || 'لا توجد عمليات مسجلة'}`;
+    let transText = customer.transactions.filter(t => t.type !== 'تسديد').map(t => `📅 ${t.date} | ${t.type}: ${Number(t.amount).toLocaleString()} | ملاحظات: ${t.notes}`).join('\n');
+    let msg = `كشف حساب الزبون:\n\nالاسم: ${customer.name}\nرقم الهاتف: ${customer.phone}\nالرصيد الكلي المتبقي: ${Number(customer.totalDebt).toLocaleString()} دينار\n\nسجل العمليات:\n${transText || 'لا توجد عمليات مسجلة'}`;
     await customAlert(msg);
 }
 
