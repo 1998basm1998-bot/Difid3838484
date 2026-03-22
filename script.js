@@ -21,6 +21,7 @@ function showModal({ type, message, defaultValue = '' }) {
         modalButtons.innerHTML = '';
         modalInput.style.display = 'none';
         modalInput.value = defaultValue;
+        modalInput.type = 'text';
 
         const closeAction = (val) => {
             modal.classList.remove('active');
@@ -72,6 +73,29 @@ function showModal({ type, message, defaultValue = '' }) {
             const btnYes = document.createElement('button');
             btnYes.className = 'btn-modal btn-modal-confirm';
             btnYes.innerText = 'حفظ (Enter)';
+            btnYes.onclick = () => closeAction(modalInput.value);
+
+            const btnNo = document.createElement('button');
+            btnNo.className = 'btn-modal btn-modal-cancel';
+            btnNo.innerText = 'إلغاء';
+            btnNo.onclick = () => closeAction(null);
+
+            modalButtons.appendChild(btnYes);
+            modalButtons.appendChild(btnNo);
+
+            modalInput.onkeydown = function(e) {
+                if (e.key === 'Enter') btnYes.click();
+            };
+
+            setTimeout(() => modalInput.focus(), 300);
+        }
+        else if (type === 'password_prompt') {
+            modalInput.style.display = 'block';
+            modalInput.type = 'password';
+            
+            const btnYes = document.createElement('button');
+            btnYes.className = 'btn-modal btn-modal-confirm';
+            btnYes.innerText = 'تأكيد (Enter)';
             btnYes.onclick = () => closeAction(modalInput.value);
 
             const btnNo = document.createElement('button');
@@ -242,10 +266,15 @@ function renderCustomers() {
                     <button class="btn btn-danger" onclick="addNewDebt(${c.id})">دين جديد</button>
                     <button class="btn btn-warning" onclick="cancelInstallment(${c.id})">إلغاء التسديد</button>
                 </td>
-                <td class="action-btns">
-                    <button class="btn btn-primary" onclick="showDetails(${c.id})">تفاصيل</button>
-                    <button class="btn btn-warning" onclick="editCustomer(${c.id})">تعديل</button>
-                    <button class="btn btn-primary" onclick="showStatement(${c.id})">كشف حساب</button>
+                <td class="action-btns" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-primary" onclick="showDetails(${c.id})">تفاصيل</button>
+                        <button class="btn btn-primary" onclick="showStatement(${c.id})">كشف حساب</button>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-warning" onclick="editCustomer(${c.id})">تعديل</button>
+                        <button class="btn btn-danger" onclick="deleteCustomer(${c.id})">حذف الزبون</button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -289,6 +318,17 @@ async function editCustomer(id) {
         customer.name = newName;
         renderCustomers();
         customAlert("تم تعديل بيانات الزبون بنجاح!");
+    }
+}
+
+async function deleteCustomer(id) {
+    let pass = await showModal({ type: 'password_prompt', message: '' });
+    if (pass === "1993") {
+        customers = customers.filter(c => c.id !== id);
+        renderCustomers();
+        customAlert("تم حذف الزبون بنجاح!");
+    } else if (pass !== null) {
+        customAlert("رمز خاطئ!");
     }
 }
 
@@ -407,7 +447,20 @@ async function showLateCustomers() {
     }
 }
 
-window.onload = function() {
-    renderMaterials();
-    renderCustomers();
+window.onload = async function() {
+    document.querySelector('.sidebar').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'none';
+    
+    while(true) {
+        let pass = await showModal({ type: 'password_prompt', message: '' });
+        if (pass === "1991") {
+            document.querySelector('.sidebar').style.display = 'flex';
+            document.querySelector('.main-content').style.display = 'block';
+            renderMaterials();
+            renderCustomers();
+            break;
+        } else if (pass !== null) {
+            await customAlert("رمز خاطئ!");
+        }
+    }
 };
